@@ -22,6 +22,8 @@ void histandbackproj(int,void*);
 int main(int argc, char** argv)
 {
      VideoCapture vdo(0);
+     cout<<"Once you read this message, press Enter. A window will open, and you have to place your hand inside the rectangle drawn. Then, press 's' ";
+     getchar();
      while((char)waitKey(30)!='s')
      {bool frameread=vdo.read(srcimg);
      //imshow("Source",srcimg);
