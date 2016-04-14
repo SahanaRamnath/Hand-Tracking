@@ -30,11 +30,12 @@ int main(int argc, char** argv)
      rectangle(srcimg,window,Scalar(0,255,0),1,8);
      imshow("Source",srcimg);
      }
+     destroyAllWindows();
      while(1)
      {
      bool srcread=vdo.read(srcimg);     
      //rectangle(srcimg,window,Scalar(0,255,0),1,8);
-     imshow( "SourceImage", srcimg );
+     //imshow( "SourceImage", srcimg );
      //if((char)waitKey(30)=='s')
      
      cvtColor( srcimg, hsvimg, CV_BGR2HSV );
