@@ -1,4 +1,5 @@
 //do meanshift program for the backprojected image
+//then detect the red rectangle around the hand
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
@@ -14,10 +15,15 @@ using namespace std;
 
 Mat srcimg,hsvimg,hueimg,dstimg;
 int bins=25; //number of partitions of the range 0-255 ig
-     
-Rect window(Point(139,193),Point(280,360));
+Mat mask,hsvimgnew,lower_red_hue_range,upper_red_hue_range,contourimgnew;     
 
+Rect window(Point(139,193),Point(280,360));
+vector<vector<Point> > contour;
+vector<Vec4i> hierarchy;
+//Scalar colour=Scalar(55,0,175);
+Scalar colour=Scalar(249,0,249);
 void histandbackproj(int,void*);
+void performfunction();
 
 int main(int argc, char** argv)
 {
@@ -27,7 +33,8 @@ int main(int argc, char** argv)
      while((char)waitKey(30)!='s')
      {bool frameread=vdo.read(srcimg);
      //imshow("Source",srcimg);
-     rectangle(srcimg,window,Scalar(0,255,0),1,8);
+     rectangle(srcimg,window,Scalar(0,0,255),1,8);
+    //rectangle(srcimg,window,colour,1,8);
      imshow("Source",srcimg);
      }
      destroyAllWindows();
@@ -98,12 +105,44 @@ void histandbackproj(int, void* )
      //Rect window(250,90,300,100);
      meanShift(backprojimg, window, criteria );
      //CamShift(backprojimg, window, criteria );
-     rectangle(srcimg,window,Scalar(0,255,0),1,8);
-
+     rectangle(srcimg,window,Scalar(0,0,255),1,8);
+     cvtColor( srcimg, hsvimgnew, CV_BGR2HSV );
+     /*for(z=1;z<31;z+=2)
+     { GaussianBlur(hsvimgnew,hsvimgnew,Size(z,z),0,0);}*/ 
+     //Not using GausianBlur because it slows down the program and doesn't give great results     
+     inRange(hsvimgnew,Scalar(0,100,100),Scalar(10,255,255),lower_red_hue_range);
+     inRange(hsvimgnew,Scalar(160,100,100),Scalar(179,255,255),upper_red_hue_range);
+/*     inRange(hsvimgnew,Scalar(120,100,50.2),Scalar(120,100,100),lower_red_hue_range);
+     inRange(hsvimgnew,Scalar(100,180,100),Scalar(255,255,255),upper_red_hue_range);
+    */ mask=lower_red_hue_range|upper_red_hue_range;
+     performfunction();
      //imshow("BackProjectionImage",backprojimg);
      //imshow( "SourceImage", srcimg );
      imshow("New",srcimg);
+     imshow("Mask",mask);
+
 }
-
-
-
+void performfunction()
+{
+     contourimgnew=Mat::zeros(mask.size(),CV_8UC3);
+     findContours(mask,contour,hierarchy,CV_RETR_CCOMP,CV_CHAIN_APPROX_SIMPLE,Point(0,0));
+//     drawContours(contourimgnew,contour,-1,Scalar(255,255,255),2,8,hierarchy,2,Point());          
+     Mat drawing=Mat::zeros(mask.size(),CV_8UC3);
+     vector<Point> approxrect;
+     for(size_t i=0;i<contour.size();i++) 
+     {
+          approxPolyDP(contour[i],approxrect,arcLength(Mat(contour[i]),true)*0.05,true);
+          double area=contourArea(contour[i],false); cout<<area<<endl;
+          if((approxrect.size()==4)&&(area>=16000)&&(area<24000))
+          {
+           drawContours(drawing,contour,i,Scalar(0,255,255),2,8,hierarchy,2,Point());
+           vector<Point>::iterator vertex;
+           for(vertex=approxrect.begin();vertex!=approxrect.end();vertex++)
+            circle(drawing,*vertex,3,Scalar(0,0,255),1);
+          }
+     }
+     namedWindow("Quads",CV_WINDOW_AUTOSIZE);
+     imshow("Quads",drawing);
+     //imshow("ContourImage",contourimgnew);
+}
+ 
